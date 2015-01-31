@@ -1,31 +1,43 @@
 var http = require('http');
 var cheerio = require('cheerio');
+var mongoose = require('mongoose');
 
-http.get('http://www.yelp.com/biz/bliss-coffee-redwood-city', function(res) {
-  var str = '';
+var urls = ['http://www.yelp.com/biz/bliss-coffee-redwood-city'];
+var start = 0;
 
-  res.on('data', function(chunk) {
-    str += chunk;
-  });
+var request = function(url, index) {
+  url = url + '?sort_by=date_desc';
+  if (start > 0) {
+    url = url + '&start=' + start;
+  }
 
-  res.on('end', function() {
-    var $ = cheerio.load(str);
-    $('.review-wrapper .review-content').each(function(i, el) {
-      var rating, date, description;
+  http.get(url, function(res) {
+    var str = '';
 
-      $(el).find($('meta[itemprop="ratingValue"]')).each(function(i, el) {
-        rating = el.attribs.content;
-      });
+    res.on('data', function(chunk) {
+      str += chunk;
+    });
 
-      $(el).find($('meta[itemprop="datePublished"]')).each(function(i, el) {
-        date = el.attribs.content;
-      });
+    res.on('end', function() {
+      var $ = cheerio.load(str);
+      var $content = $('.review-wrapper .review-content');
 
-      $(el).find($('p[itemprop="description"]')).each(function(i, el) {
-        description = $(el).text();
-      });
-
-      console.log(rating, date, description)
+      if ($content.length) {
+        $content.each(function(i, el) {
+          var rating = $(el).find($('meta[itemprop="ratingValue"]'))[0].attribs.content
+          var date = $(el).find($('meta[itemprop="datePublished"]'))[0].attribs.content
+          console.log(rating, date);
+        });
+        start += 40;
+        request(urls[index], index);
+      } else {
+        start = 0;
+        return;
+      }
     });
   });
-})
+};
+
+urls.forEach(function(url, index) {
+  request(url, index);
+});
