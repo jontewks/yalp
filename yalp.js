@@ -26,8 +26,8 @@ var request = function(url, index) {
         $content.each(function(i, el) {
           var rating = $(el).find($('meta[itemprop="ratingValue"]'))[0].attribs.content
           var date = $(el).find($('meta[itemprop="datePublished"]'))[0].attribs.content
-          console.log(rating, date);
         });
+
         start += 40;
         request(urls[index], index);
       } else {
